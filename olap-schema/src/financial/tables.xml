@@ -1,0 +1,6 @@
+<!ENTITY glaccount-relation SYSTEM "table-relation/gl-account-facts.xml">
+<!ENTITY transaction-date-relation SYSTEM "table-relation/transaction-date.xml">
+<!ENTITY glaccountbyperiod-relation SYSTEM "table-relation/gl-account-period-facts.xml">
+<!ENTITY glbudgetbyperiod-relation SYSTEM "table-relation/gl-budget-period-facts.xml">
+<!ENTITY glfactsbyperiod-relation SYSTEM "table-relation/gl-facts-by-period.xml">
+<!ENTITY budget-relation SYSTEM "table-relation/gl-budget.xml">

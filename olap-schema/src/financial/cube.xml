@@ -1,0 +1,1102 @@
+	<!-- 
+	Copyright 2012-2014 Jeff Gunderson
+	Refer to included license
+	-->  
+<Cube name="GLAccount" cache="true" enabled="true" caption="&GLAccount;">
+    &glaccount-relation;
+
+    <DimensionUsage source="Company" name="Company" caption="&Company;"  foreignKey="COMPANY_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Profit Center" name="Profit Center" caption="&ProfitCenter;" foreignKey="PROFIT_CENTER_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Account" name="Account" caption="&Account;" foreignKey="ACCOUNT_K" highCardinality="false">
+    </DimensionUsage>
+
+    <Dimension name="Transaction Date" type="TimeDimension" caption="&TransactionDate;" foreignKey="TRANS_DATE_K" highCardinality="false" >
+      <Hierarchy name="Calendar" hasAll="true" allMemberName="All Years" allMemberCaption="&DatesAllYears;" primaryKey="DAYS_DATE" caption="Calendar">
+        &transaction-date-relation;
+        <Level name="Year" column="YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Year">
+        </Level>
+        <Level name="Period" column="PERIOD" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Period">
+          <Property name="Month" column="PERIOD" type="Numeric">
+          </Property>
+        </Level>
+        <Level name="Date" type="Date" uniqueMembers="false" levelType="TimeDays" hideMemberIf="Never" caption="Date">
+          <KeyExpression>
+            <SQL dialect="mssql">
+              <![CDATA[SUBSTRING(CONVERT(CHAR, "THE_DATE", 120), 1, 10)]]>
+            </SQL>
+            <SQL dialect="generic">
+              <![CDATA["TransactionDate"."THE_DATE"]]>
+            </SQL>
+          </KeyExpression>
+          <Property name="Date" column="THE_DATE" type="String">
+          </Property>
+          <Property name="Days Date" column="DAYS_DATE" type="Numeric">
+          </Property>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+  <Dimension name="Journal Doc" foreignKey="JOURNAL_DOC_K" type="StandardDimension" highCardinality="false" caption="&JournalDoc;">
+    <Hierarchy hasAll="true" allMemberCaption="&JournalDocAll;" allMemberName="All Journal Docs" primaryKey="JOURNAL_DOC_K" caption ="&JournalDocByKey;">
+      <Level name="Journal Doc Key" caption="&JournalDocKey;" column="JOURNAL_DOC_NK" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+      </Level>
+      <Level name="Journal Line Item" caption="&JournalDocLineKey;" column="JOURNAL_LINE_ITEM_NK" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension name="Ledger" type="StandardDimension" highCardinality="false" caption="&Ledger;">
+    <Hierarchy hasAll="true" allMemberCaption="&LedgerAll;" allMemberName="All Ledgers" caption ="&LedgerByKey;">
+      <Level name="Ledger Key" caption="&LedgerKey;" column="LEDGER_NK" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+
+    <Measure name="Amount, Debit" caption="&DebitAmount;" column="DEBIT" formatString="#,##0.00" aggregator="sum">
+    </Measure>
+    <Measure name="Amount, Credit" caption="&CreditAmount;" column="CREDIT" formatString="#,##0.00" aggregator="sum">
+    </Measure>
+    <Measure name="Days Transaction Date"  column="TRANS_DATE_K" formatString="########" aggregator="min" visible="false">
+    </Measure>
+
+<!--
+        For dates if we have not date or we are not at the Journal Line level, return null
+-->
+    <CalculatedMember name="Date, Transaction" caption="&TransactionDate;" dimension="Measures" visible="true">
+      <Formula>
+        <![CDATA[
+            iif ([Journal Line Item].CurrentMember.level.ordinal <> 1
+			AND [Journal Line Item].CurrentMember.level.ordinal <> 2
+			AND [Journal Doc].CurrentMember.level.ordinal <> 1, 
+				"",
+              	iif([Measures].[Days Transaction Date] is empty, cast (null as string),
+                		iif([Measures].[Days Transaction Date] = 0, "",
+                		getDateString(cast([Measures].[Days Transaction Date] as string)))))]]>
+      </Formula>
+    </CalculatedMember>
+
+  <CalculatedMember name="Amount, Activity" caption="&ActivityAmount;" dimension="Measures" visible="true">
+	<Formula>
+        [Measures].[Amount, Credit] - [Measures].[Amount, Debit]
+	</Formula>
+  </CalculatedMember>
+</Cube>
+
+<Cube name="GLAccountByPeriod" cache="true" enabled="true" caption="&GLAccountbyPeriod;">
+    &glaccountbyperiod-relation;
+
+    <DimensionUsage source="Company" name="Company" caption="&Company;"  foreignKey="COMPANY_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Profit Center" name="Profit Center" caption="&ProfitCenter;" foreignKey="PROFIT_CENTER_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Account" name="Account" caption="&Account;" foreignKey="ACCOUNT_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Fiscal Period" name="Fiscal Period" caption="&FiscalPeriod;" foreignKey="FISCAL_PERIOD_K" highCardinality="false">
+    </DimensionUsage>
+
+
+  <Dimension name="Ledger" type="StandardDimension" highCardinality="false" caption="&Ledger;">
+    <Hierarchy hasAll="true" allMemberCaption="&LedgerAll;" allMemberName="All Ledgers" caption ="&LedgerByKey;">
+      <Level name="Ledger Key" caption="&LedgerKey;" column="LEDGER" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+    <Measure name="Amount, Debit" caption="&DebitAmount;" column="DEBIT" formatString="#,##0.00" aggregator="sum">
+    </Measure>
+    <Measure name="Amount, Credit" caption="&CreditAmount;" column="CREDIT" formatString="#,##0.00" aggregator="sum">
+    </Measure>
+    <Measure name="Account Balance" caption="&BalanceAmount;" column="BALANCE" formatString="#,##0.00" aggregator="sum" visible="false">
+    </Measure>
+
+  	<CalculatedMember name="Amount, Activity" caption="&ActivityAmount;" dimension="Measures" visible="true">
+	<Formula>
+        [Measures].[Amount, Credit] - [Measures].[Amount, Debit]
+	</Formula>
+  	</CalculatedMember>
+
+	<CalculatedMember name="Amount, Balance" caption="&BalanceAmount;" dimension="Measures" visible="true">
+	<Formula> 
+		iif( 1 > 0 AND [Fiscal Period].CurrentMember.level.ordinal = 1, 
+			sum(tail(descendants([Fiscal Period].CurrentMember,[Fiscal Period].[Fiscal Period])), [Measures].[Account Balance]), 
+				iif( 1 > 0 AND [Fiscal Period].CurrentMember.level.ordinal = 2, [Measures].[Account Balance], cast (null as numeric)))
+	</Formula> 
+	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Assets (BS)" caption="&AssetsAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Asset]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Liabilities (BS)" caption="&LiabilitiesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by Type by Subtype].[Liability]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Revenue (IS)" caption="&RevenueAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by Type by Subtype].[Revenue]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Revenue (IS)" caption="&ChangesRevenueAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by Type by Subtype].[Revenue]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Expenses (IS)" caption="&ExpensesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Expense]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Net Income (IS)" caption="&NetIncomeAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Revenue (IS)] - [Measures].[Amount, Expenses (IS)]
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Cost of Goods Sold (IS)" caption="&COGSAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Expense].[Cost of Goods Sold]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Cost of Goods Sold (IS)" caption="&ChangesCOGSAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Expense].[Cost of Goods Sold]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Gross Income (IS)" caption="&GrossIncomeAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Revenue (IS)] - [Measures].[Amount, Cost of Goods Sold (IS)]
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Depreciation (IS)" caption="&DepreciationAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Expense].[Depreciation Expense]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Operating Expenses (IS)" caption="&OperatingExpensesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Expenses (IS)] - [Measures].[Amount, Cost of Goods Sold (IS)]
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Operating Income (IS)" caption="&OperatingIncomeAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Revenue (IS)] - [Measures].[Amount, Cost of Goods Sold (IS)] - [Measures].[Amount, Operating Expenses (IS)]
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Percentage, Gross Margin" caption="&GrossMarginPercentage;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+                iif([Measures].[Amount, Gross Income (IS)] > 0 AND (([Measures].[Amount, Revenue (IS)] is empty) OR [Measures].[Amount, Revenue (IS)] = 0), 100 
+			, iif([Measures].[Amount, Gross Income (IS)] < 0 AND (([Measures].[Amount, Revenue (IS)] is empty) OR [Measures].[Amount, Revenue (IS)] = 0), -100 
+				, iif([Measures].[Amount, Gross Income (IS)] is empty AND (NOT ([Measures].[Amount, Revenue (IS)] is empty)), 0 
+					, ([Measures].[Amount, Gross Income (IS)] / [Measures].[Amount, Revenue (IS)]) * 100) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Percentage, Operating Margin" caption="&OperatingMarginPercentage;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+                iif([Measures].[Amount, Operating Expenses (IS)] > 0 AND (([Measures].[Amount, Revenue (IS)] is empty) OR [Measures].[Amount, Revenue (IS)] = 0), 100 
+			, iif([Measures].[Amount, Operating Expenses (IS)] < 0 AND (([Measures].[Amount, Revenue (IS)] is empty) OR [Measures].[Amount, Revenue (IS)] = 0), -100 
+				, iif([Measures].[Amount, Operating Expenses (IS)] is empty AND (NOT ([Measures].[Amount, Revenue (IS)] is empty)), 0
+					, ([Measures].[Amount, Operating Expenses (IS)] / [Measures].[Amount, Revenue (IS)]) * 100) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Percentage, Net Margin" caption="&NetMarginPercentage;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+                iif([Measures].[Amount, Net Income (IS)] > 0 AND (([Measures].[Amount, Revenue (IS)] is empty) OR [Measures].[Amount, Revenue (IS)] = 0), 100 
+			, iif([Measures].[Amount, Net Income (IS)] < 0 AND (([Measures].[Amount, Revenue (IS)] is empty) OR [Measures].[Amount, Revenue (IS)] = 0), -100 
+				, iif([Measures].[Amount, Net Income (IS)] is empty AND (NOT ([Measures].[Amount, Revenue (IS)] is empty)), 0
+					, ([Measures].[Amount, Net Income (IS)] / [Measures].[Amount, Revenue (IS)]) * 100) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+
+  	<CalculatedMember name="Amount, Owner's Equity (BS)" caption="&OwnersEquityAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Net Income (IS)] + Sum({[Account.Accounts by Type by Subtype].[Equity]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Charges Not Using Cash (CF)" caption="&ChargesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Charges Not Using Cash]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+	<!-- the postbooks cftype is wrongly named - changes in current assets. Its actually the balance -->
+
+  	<CalculatedMember name="Amount, Current Assets (CF)" caption="&CurrentAssetsAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Changes in Current Assets]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Current Assets (CF)" caption="&ChangesAssetsAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Changes in Current Assets]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Net Receivables (CF)" caption="&NetReceivablesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Net Receivables]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Receivables (CF)" caption="&ChangesReceivablesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Net Receivables]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Inventory (CF)" caption="&InventoryAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Inventory]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+
+  	<CalculatedMember name="Amount, Changes in Inventory (CF)" caption="&ChangesInventoryAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Inventory]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+	<!-- the postbooks cftype is wrongly named - changes in current liability. Its actually the balance -->
+
+  	<CalculatedMember name="Amount, Current Liability (CF)" caption="&LiabilityAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Change in Current Liability]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Change in Current Liability (CF)" caption="&ChangeLiabilityAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Change in Current Liability]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Accounts Payable (CF)" caption="&AccountsPayableAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Accounts Payable]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Accounts Payable (CF)" caption="&ChangesAccountsPayableAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Accounts Payable]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Property Plant and Equipment (CF)" caption="&ChangesPPEAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Property Plant and Equipment]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Other Assets (CF)" caption="&ChangesOtherAssetsAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Other Assets]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Long Term Debt (CF)" caption="&ChangesLongTermDebtAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Long Term Debt]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+
+  	<CalculatedMember name="Amount, Common Stock and Equity (CF)" caption="&CSEAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Common Stock and Equity]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Common Stock and Equity (CF)" caption="&ChangesCSEAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Common Stock and Equity]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Operating Activities (CF)" caption="&OperatingActivitiesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Charges Not Using Cash (CF)] + 
+		[Measures].[Amount, Changes in Current Assets (CF)] - 
+		[Measures].[Amount, Changes in Receivables (CF)] - 
+		[Measures].[Amount, Changes in Inventory (CF)] +
+		[Measures].[Amount, Change in Current Liability (CF)] + 
+		[Measures].[Amount, Changes in Accounts Payable (CF)]
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Investing Activities (CF)" caption="&InvestingActivitiesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Changes in Property Plant and Equipment (CF)] + 
+		[Measures].[Amount, Changes in Other Assets (CF)] 
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Financing Activities (CF)" caption="&FinancingAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Changes in Long Term Debt (CF)] + 
+		[Measures].[Amount, Changes in Common Stock and Equity (CF)] 
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Net Cash Flow (CF)" caption="&NCFAmount;" dimension="Measures" visible="true">
+	<Formula>
+        	[Measures].[Amount, Net Income (IS)] +  
+        	[Measures].[Amount, Operating Activities (CF)] + 
+		[Measures].[Amount, Investing Activities (CF)] + 
+		[Measures].[Amount, Financing Activities (CF)] 
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Free Cash Flow" caption="&FCFAmount;" dimension="Measures" visible="true">
+	<Formula>
+        	[Measures].[Amount, Net Income (IS)] +  
+        	[Measures].[Amount, Operating Activities (CF)] - 
+		[Measures].[Amount, Changes in Property Plant and Equipment (CF)]
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Days in Period" dimension="Measures" visible="false">
+	<Formula> 
+        <![CDATA[
+                iif([Fiscal Period.Fiscal Period CL].CurrentMember.Level.Ordinal = 1, 360, 
+			iif([Fiscal Period.Fiscal Period CL].CurrentMember.Level.Ordinal = 2, 30, cast(null as numeric)))
+	]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Days, In Inventory" caption="&DaysInInventory;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		iif([Measures].[Days in Period] is empty, cast(null as numeric),
+			iif( (NOT([Measures].[Amount, Inventory (CF)] is empty)) AND ([Measures].[Amount, Changes in Cost of Goods Sold (IS)] is empty OR [Measures].[Amount, Changes in Cost of Goods Sold (IS)] = 0) , [Measures].[Days in Period],
+				iif( ([Measures].[Amount, Inventory (CF)] is empty OR [Measures].[Amount, Inventory (CF)] = 0) AND (NOT([Measures].[Amount, Changes in Cost of Goods Sold (IS)] is empty)), 0,
+					[Measures].[Amount, Inventory (CF)] / ([Measures].[Amount, Changes in Cost of Goods Sold (IS)] / [Measures].[Days in Period] ) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Days, Sales Outstanding" caption="&DaysSalesOutstanding;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		iif([Measures].[Days in Period] is empty, cast(null as numeric),
+			iif( (NOT([Measures].[Amount, Net Receivables (CF)] is empty)) AND ([Measures].[Amount, Changes in Revenue (IS)] is empty OR [Measures].[Amount, Changes in Revenue (IS)] = 0) , [Measures].[Days in Period],
+				iif( ([Measures].[Amount, Net Receivables (CF)] is empty OR [Measures].[Amount, Net Receivables (CF)] = 0) AND (NOT([Measures].[Amount, Changes in Revenue (IS)] is empty)), 0,
+					[Measures].[Amount, Net Receivables (CF)] / ([Measures].[Amount, Changes in Revenue (IS)] / [Measures].[Days in Period] ) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+ 	<CalculatedMember name="Days, Payable Outstanding" caption="&DaysPayableOutstanding;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		iif([Measures].[Days in Period] is empty, cast(null as numeric),
+			iif( (NOT([Measures].[Amount, Accounts Payable (CF)] is empty)) AND ([Measures].[Amount, Changes in Cost of Goods Sold (IS)] is empty OR [Measures].[Amount, Changes in Cost of Goods Sold (IS)] = 0) , [Measures].[Days in Period],
+				iif( ([Measures].[Amount, Accounts Payable (CF)] is empty OR [Measures].[Amount, Accounts Payable (CF)] = 0) AND (NOT([Measures].[Amount, Changes in Cost of Goods Sold (IS)] is empty)), 0,
+					[Measures].[Amount, Accounts Payable (CF)] / ([Measures].[Amount, Changes in Cost of Goods Sold (IS)] / [Measures].[Days in Period] ) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+ 	<CalculatedMember name="Days, Cash Conversion Cycle" caption="&DaysCCC;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		[Measures].[Days, In Inventory]
+		+ [Measures].[Days, Sales Outstanding]
+		- [Measures].[Days, Payable Outstanding]
+	]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Ratio, Debt to Equity" caption="&ratioDebtEquity;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+                iif([Measures].[Amount, Liabilities (BS)] > 0 AND (([Measures].[Amount, Owner's Equity (BS)] is empty) OR [Measures].[Amount, Owner's Equity (BS)] = 0), 1 
+			, iif([Measures].[Amount, Liabilities (BS)] < 0 AND (([Measures].[Amount, Owner's Equity (BS)] is empty) OR [Measures].[Amount, Owner's Equity (BS)] = 0), -1 
+				, iif([Measures].[Amount, Liabilities (BS)] is empty AND (NOT ([Measures].[Amount, Owner's Equity (BS)] is empty)), 0 
+					, ([Measures].[Amount, Liabilities (BS)] / [Measures].[Amount, Owner's Equity (BS)]) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Ratio, Total Debt" caption="&ratioTotalDebt;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+                iif([Measures].[Amount, Assets (BS)] > 0 AND (([Measures].[Amount, Liabilities (BS)] is empty) OR [Measures].[Amount, Liabilities (BS)] = 0), 1 
+			, iif([Measures].[Amount, Assets (BS)] < 0 AND (([Measures].[Amount, Liabilities (BS)] is empty) OR [Measures].[Amount, Liabilities (BS)] = 0), -1 
+				, iif([Measures].[Amount, Assets (BS)] is empty AND (NOT ([Measures].[Amount, Liabilities (BS)] is empty)), 0 
+					, ([Measures].[Amount, Assets (BS)] / [Measures].[Amount, Liabilities (BS)]) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Ratio, Current" caption="&ratioCurrent;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+                iif([Measures].[Amount, Current Assets (CF)] > 0 AND (([Measures].[Amount, Current Liability (CF)] is empty) OR [Measures].[Amount, Current Liability (CF)] = 0), 1 
+			, iif([Measures].[Amount, Current Assets (CF)] < 0 AND (([Measures].[Amount, Current Liability (CF)] is empty) OR [Measures].[Amount, Current Liability (CF)] = 0), -1 
+				, iif([Measures].[Amount, Current Assets (CF)] is empty AND (NOT ([Measures].[Amount, Current Liability (CF)] is empty)), 0 
+					, ([Measures].[Amount, Current Assets (CF)] / [Measures].[Amount, Current Liability (CF)]) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+
+  	<CalculatedMember name="Quick Assets" dimension="Measures" visible="false">
+	<Formula> 
+        <![CDATA[
+ 		[Measures].[Amount, Current Assets (CF)] - [Measures].[Amount, Inventory (CF)] ]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Ratio, Quick" caption="&ratioQuick;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+                iif([Measures].[Quick Assets] > 0 AND (([Measures].[Amount, Current Liability (CF)] is empty) OR [Measures].[Amount, Current Liability (CF)] = 0), 1 
+			, iif([Measures].[Quick Assets] < 0 AND (([Measures].[Amount, Current Liability (CF)] is empty) OR [Measures].[Amount, Current Liability (CF)] = 0), -1 
+				, iif([Measures].[Quick Assets] is empty AND (NOT ([Measures].[Amount, Current Liability (CF)] is empty)), 0 
+					, ([Measures].[Quick Assets] / [Measures].[Amount, Current Liability (CF)]) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Ratio, Return on Assets" caption="&ratioReturnAssets;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+                iif([Measures].[Amount, Net Income (IS)] > 0 AND (([Measures].[Amount, Assets (BS)] is empty) OR [Measures].[Amount, Assets (BS)] = 0), 1 
+			, iif([Measures].[Amount, Net Income (IS)] < 0 AND (([Measures].[Amount, Assets (BS)] is empty) OR [Measures].[Amount, Assets (BS)] = 0), -1 
+				, iif([Measures].[Amount, Net Income (IS)] is empty AND (NOT ([Measures].[Amount, Assets (BS)] is empty)), 0 
+					, ([Measures].[Amount, Net Income (IS)] / [Measures].[Amount, Assets (BS)]) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+
+  	<CalculatedMember name="Ratio, Return on Equity" caption="&ratioReturnEquity;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+                iif([Measures].[Amount, Net Income (IS)] > 0 AND (([Measures].[Amount, Common Stock and Equity (CF)] is empty) OR [Measures].[Amount, Common Stock and Equity (CF)] = 0), 1 
+			, iif([Measures].[Amount, Net Income (IS)] < 0 AND (([Measures].[Amount, Common Stock and Equity (CF)] is empty) OR [Measures].[Amount, Common Stock and Equity (CF)] = 0), -1 
+				, iif([Measures].[Amount, Net Income (IS)] is empty AND (NOT ([Measures].[Amount, Common Stock and Equity (CF)] is empty)), 0 
+					, ([Measures].[Amount, Net Income (IS)] / [Measures].[Amount, Common Stock and Equity (CF)]) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+
+
+
+
+</Cube>
+
+<Cube name="GLBudgetByPeriod" cache="true" enabled="true" caption="&GLBudgetbyPeriod;">
+    &glbudgetbyperiod-relation;
+
+    <DimensionUsage source="Company" name="Company" caption="&Company;"  foreignKey="COMPANY_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Profit Center" name="Profit Center" caption="&ProfitCenter;" foreignKey="PROFIT_CENTER_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Account" name="Account" caption="&Account;" foreignKey="ACCOUNT_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Fiscal Period" name="Fiscal Period" caption="&FiscalPeriod;" foreignKey="FISCAL_PERIOD_K" highCardinality="false">
+    </DimensionUsage>
+
+  <Dimension name="Budget" foreignKey="BUDGET_K" highCardinality="false" caption="&Budget;">
+    <Hierarchy hasAll="true" allMemberName="All Budgets" allMemberCaption="&BudgetAll;" primaryKey="BUDGET_K" caption="&BudgetByName;">
+      &budget-relation;
+      <Level name="Budget Name" caption="&BudgetName;" column="NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        <Property name="Budget Key" caption="&BudgetKey;" column="BUDGET_K" type="String">
+        </Property>
+      </Level>
+    </Hierarchy>
+    <Hierarchy name="Budget Code" hasAll="true" allMemberName="All Budgets by Code" allMemberCaption="&BudgetCodeAll;" primaryKey="BUDGET_K" caption="&BudgetByCode;">
+      &budget-relation;
+      <Level name="Budget Code" caption="&BudgetCode;" column="BUDGET_NK" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        <Property name="Budget Key" caption="&BudgetKey;" column="BUDGET_K" type="String">
+        </Property>
+      </Level>
+      <Level name="Budget Name" caption="&BudgetName;" column="NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        <Property name="Budget Key" caption="&BudgetKey;" column="BUDGET_K" type="String">
+        </Property>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension name="Budget Doc" foreignKey="BUDGET_DOC_K" type="StandardDimension" highCardinality="false" caption="&BudgetDoc;">
+    <Hierarchy hasAll="true" allMemberCaption="&BudgetDocAll;" allMemberName="All Budget Docs" primaryKey="BUDGET_DOC_K" caption ="&BudgetDocByKey;">
+      <Level name="Budget Doc Key" caption="&BudgetDocKey;" column="BUDGET_DOC_NK" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension name="Ledger" type="StandardDimension" highCardinality="false" caption="&Ledger;">
+    <Hierarchy hasAll="true" allMemberCaption="&LedgerAll;" allMemberName="All Ledgers" caption ="&LedgerByKey;">
+      <Level name="Ledger Key" caption="&LedgerKey;" column="LEDGER_NK" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+    <Measure name="Budget" column="AMOUNT" formatString="#,##0.00" aggregator="sum" visible="false">
+    </Measure>
+
+	<CalculatedMember name="Amount, Budget" caption="&BudgetAmount;" dimension="Measures" visible="true">
+	<Formula>
+		iif([Fiscal Period].CurrentMember.level.ordinal = 1, 
+			sum(tail(descendants([Fiscal Period].CurrentMember,[Fiscal Period].[Fiscal Period])), [Measures].[Budget]), 
+				iif([Fiscal Period].CurrentMember.level.ordinal = 2, [Measures].[Budget], cast(null as numeric)))
+	</Formula> 
+	</CalculatedMember>
+</Cube>
+
+<Cube name="GLFactsByPeriod" cache="true" enabled="true" caption="&GLFactsbyPeriod;">
+    &glfactsbyperiod-relation;
+
+    <DimensionUsage source="Company" name="Company" caption="&Company;"  foreignKey="COMPANY_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Profit Center" name="Profit Center" caption="&ProfitCenter;" foreignKey="PROFIT_CENTER_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Account" name="Account" caption="&Account;" foreignKey="ACCOUNT_K" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Fiscal Period" name="Fiscal Period" caption="&FiscalPeriod;" foreignKey="FISCAL_PERIOD_K" highCardinality="false">
+    </DimensionUsage>
+
+  <Dimension name="Budget" foreignKey="BUDGET_K" highCardinality="false" caption="&Budget;">
+    <Hierarchy hasAll="true" allMemberName="All Budgets" allMemberCaption="&BudgetAll;" primaryKey="BUDGET_K" caption="&BudgetByName;">
+      &budget-relation;
+      <Level name="Budget Name" caption="&BudgetName;" column="NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        <Property name="Budget Key" caption="&BudgetKey;" column="BUDGET_K" type="String">
+        </Property>
+      </Level>
+    </Hierarchy>
+    <Hierarchy name="Budget Code" hasAll="true" allMemberName="All Budgets by Code" allMemberCaption="&BudgetCodeAll;" primaryKey="BUDGET_K" caption="&BudgetByCode;">
+      &budget-relation;
+      <Level name="Budget Code" caption="&BudgetCode;" column="BUDGET_NK" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        <Property name="Budget Key" caption="&BudgetKey;" column="BUDGET_K" type="String">
+        </Property>
+      </Level>
+      <Level name="Budget Name" caption="&BudgetName;" column="NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        <Property name="Budget Key" caption="&BudgetKey;" column="BUDGET_K" type="String">
+        </Property>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension name="Budget Doc" foreignKey="BUDGET_DOC_K" type="StandardDimension" highCardinality="false" caption="&BudgetDoc;">
+    <Hierarchy hasAll="true" allMemberCaption="&BudgetDocAll;" allMemberName="All Budget Docs" primaryKey="BUDGET_DOC_K" caption ="&BudgetDocByKey;">
+      <Level name="Budget Doc Key" caption="&BudgetDocKey;" column="BUDGET_DOC_NK" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension name="Ledger" type="StandardDimension" highCardinality="false" caption="&Ledger;">
+    <Hierarchy hasAll="true" allMemberCaption="&LedgerAll;" allMemberName="All Ledgers" caption ="&LedgerByKey;">
+      <Level name="Ledger Key" caption="&LedgerKey;" column="LEDGER" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+    <Measure name="Amount, Debit" caption="&DebitAmount;" column="DEBIT" formatString="#,##0.00" aggregator="sum">
+    </Measure>
+    <Measure name="Amount, Credit" caption="&CreditAmount;" column="CREDIT" formatString="#,##0.00" aggregator="sum">
+    </Measure>
+    <Measure name="Account Balance" column="BALANCE" formatString="#,##0.00" aggregator="sum" visible="false">
+    </Measure>
+    <Measure name="Account Budget" column="BUDGET_AMOUNT" formatString="#,##0.00" aggregator="sum" visible="false">
+    </Measure>
+
+
+	<CalculatedMember name="Amount, Balance" caption="&BalanceAmount;" dimension="Measures" visible="true">
+	<Formula>
+		iif( 1 > 0 AND [Fiscal Period].CurrentMember.level.ordinal = 1, 
+			sum(tail(descendants([Fiscal Period].CurrentMember,[Fiscal Period].[Fiscal Period])), [Measures].[Account Balance]), 
+				iif( 1 > 0 AND [Fiscal Period].CurrentMember.level.ordinal = 2, [Measures].[Account Balance], cast (null as numeric)))
+	</Formula> 
+	</CalculatedMember>
+
+	<CalculatedMember name="Amount, Budget" caption="&BudgetAmount;" dimension="Measures" visible="true">
+	<Formula>
+		iif( 1 > 0 AND [Fiscal Period].CurrentMember.level.ordinal = 1, 
+			sum(tail(descendants([Fiscal Period].CurrentMember,[Fiscal Period].[Fiscal Period])), [Measures].[Account Budget]), 
+				iif( 1 > 0 AND [Fiscal Period].CurrentMember.level.ordinal = 2, [Measures].[Account Budget], cast (null as numeric)))
+	</Formula> 
+	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Activity" caption="&ActivityAmount;" dimension="Measures" visible="true">
+		<Formula>
+        	[Measures].[Amount, Credit] - [Measures].[Amount, Debit]
+		</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Activity Budget" caption="&ActivityBudgetAmount;" dimension="Measures" visible="true">
+		<Formula>
+        	[Measures].[Amount, Budget] - ([Measures].[Amount, Budget], [Fiscal Period.Fiscal Period CL].CurrentMember.PrevMember)
+		</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Variance" caption="&VarianceAmount;" dimension="Measures" visible="true">
+		<Formula>
+        	[Measures].[Amount, Budget] - [Measures].[Amount, Activity]
+		</Formula>
+    	<CalculatedMemberProperty name="FORMAT_STRING" value="#,##0.00"/>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Revenue (IS)" caption="&RevenueAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by Type by Subtype].[Revenue]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Revenue (IS)" caption="&ChangesRevenueAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by Type by Subtype].[Revenue]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Revenue Budget (IS)" caption="&RevenueBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by Type by Subtype].[Revenue]}, [Measures].[Amount, Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Revenue Budget (IS)" caption="&ChangesRevenueBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by Type by Subtype].[Revenue]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Expenses (IS)" caption="&ExpensesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Expense]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Expenses Budget (IS)" caption="&ExpensesBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Expense]}, [Measures].[Amount, Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Net Income (IS)" caption="&NetIncomeAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Revenue (IS)] - [Measures].[Amount, Expenses (IS)]
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Net Income Budget (IS)" caption="&NetIncomeBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Revenue Budget (IS)] - [Measures].[Amount, Expenses Budget (IS)]
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Sales Income" caption="&SalesIncomeAmount;" dimension="Measures" visible="true">
+		<Formula> 
+        	 Sum({[Account.Accounts by Type by Subtype].[Revenue].[Sales Income]}, [Measures].[Amount, Balance])
+		</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Sales Income Budget" caption="&SalesIncomeBudgetAmount;" dimension="Measures" visible="true">
+		<Formula> 
+        	 Sum({[Account.Accounts by Type by Subtype].[Revenue].[Sales Income]}, [Measures].[Amount, Budget])
+		</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Other Income" caption="&OtherIncomeAmount;" dimension="Measures" visible="true">
+		<Formula> 
+        	 Sum({[Account.Accounts by Type by Subtype].[Revenue].[Other Income]}, [Measures].[Amount, Balance])
+		</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Other Income Budget" caption="&OtherIncomeBudgetAmount;" dimension="Measures" visible="true">
+		<Formula> 
+        	 Sum({[Account.Accounts by Type by Subtype].[Revenue].[Other Income]}, [Measures].[Amount, Budget])
+		</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Charges Not Using Cash (CF)" caption="&ChargesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Charges Not Using Cash]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Charges Not Using Cash Budget (CF)" caption="&ChargesBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Charges Not Using Cash]}, [Measures].[Amount, Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Current Assets (CF)" caption="&ChangesAssetsAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Changes in Current Assets]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Current Assets Budget (CF)" caption="&ChangesAssetsBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Changes in Current Assets]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Receivables (CF)" caption="&ChangesReceivablesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Net Receivables]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Receivables Budget (CF)" caption="&ChangesReceivablesBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Net Receivables]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Inventory (CF)" caption="&InventoryAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Inventory]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Inventory Budget (CF)" caption="&InventoryBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Inventory]}, [Measures].[Amount, Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Inventory (CF)" caption="&ChangesInventoryAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Inventory]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Inventory Budget (CF)" caption="&ChangesInventoryBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Inventory]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+	<!-- the postbooks cftype is wrongly named - changes in current liability. Its actually the balance -->
+
+  	<CalculatedMember name="Amount, Change in Current Liability (CF)" caption="&ChangeLiabilityAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Change in Current Liability]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Change in Current Liability Budget (CF)" caption="&ChangeLiabilityBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Change in Current Liability]}, [Measures].[Amount, Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Accounts Payable (CF)" caption="&ChangesAccountsPayableAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Accounts Payable]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Accounts Payable Budget (CF)" caption="&ChangesAccountsPayableBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Accounts Payable]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Cost of Goods Sold (IS)" caption="&COGSAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Expense].[Cost of Goods Sold]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Cost of Goods Sold (IS)" caption="&ChangesCOGSAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Expense].[Cost of Goods Sold]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Cost of Goods Sold Budget (IS)" caption="&COGSBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Expense].[Cost of Goods Sold]}, [Measures].[Amount, Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Cost of Goods Sold Budget (IS)" caption="&ChangesCOGSBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by Type by Subtype].[Expense].[Cost of Goods Sold]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Operating Expenses" caption="&OperatingExpensesAmount;" dimension="Measures" visible="true">
+		<Formula> 
+        	[Measures].[Amount, Expenses (IS)] - [Measures].[Amount, Cost of Goods Sold (IS)]
+		</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Operating Expenses Budget" caption="&OperatingExpensesBudgetAmount;" dimension="Measures" visible="true">
+		<Formula> 
+        	[Measures].[Amount, Expenses Budget (IS)] - [Measures].[Amount, Cost of Goods Sold Budget (IS)]
+		</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Operating Activities (CF)" caption="&OperatingActivitiesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Charges Not Using Cash (CF)] + 
+		[Measures].[Amount, Changes in Current Assets (CF)] - 
+		[Measures].[Amount, Changes in Receivables (CF)] - 
+		[Measures].[Amount, Changes in Inventory (CF)] +
+		[Measures].[Amount, Change in Current Liability (CF)] + 
+		[Measures].[Amount, Changes in Accounts Payable (CF)]
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Operating Activities Budget (CF)" caption="&OperatingActivitiesBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Charges Not Using Cash Budget (CF)] + 
+		[Measures].[Amount, Changes in Current Assets Budget (CF)] - 
+		[Measures].[Amount, Changes in Receivables Budget (CF)] - 
+		[Measures].[Amount, Changes in Inventory Budget (CF)] +
+		[Measures].[Amount, Change in Current Liability Budget (CF)] + 
+		[Measures].[Amount, Changes in Accounts Payable Budget (CF)]
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Property Plant and Equipment (CF)" caption="&ChangesPPEAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Property Plant and Equipment]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Property Plant and Equipment Budget (CF)" caption="&ChangesPPEBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Property Plant and Equipment]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Other Assets (CF)" caption="&ChangesOtherAssetsAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Other Assets]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Other Assets Budget (CF)" caption="&ChangesOtherAssetsBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Other Assets]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Other Assets Budget (CF)" caption="&ChangesOtherAssetsBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Other Assets]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+
+  	<CalculatedMember name="Amount, Changes in Long Term Debt (CF)" caption="&ChangesLongTermDebtAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Long Term Debt]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Long Term Debt Budget (CF)" caption="&ChangesLongTermDebtBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Long Term Debt]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Common Stock and Equity (CF)" caption="&CSEAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Common Stock and Equity]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Common Stock and Equity (CF)" caption="&ChangesCSEAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Common Stock and Equity]}, [Measures].[Amount, Activity])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Common Stock and Equity Budget (CF)" caption="&CSEBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Common Stock and Equity]}, [Measures].[Amount, Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Changes in Common Stock and Equity Budget (CF)" caption="&ChangesCSEBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Common Stock and Equity]}, [Measures].[Amount, Activity Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Net Receivables (CF)" caption="&NetReceivablesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Net Receivables]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Net Receivables Budget (CF)" caption="&NetReceivablesBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	- Sum({[Account.Accounts by CFType].[Net Receivables]}, [Measures].[Amount, Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Accounts Payable (CF)" caption="&AccountsPayableAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Accounts Payable]}, [Measures].[Amount, Balance])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Accounts Payable Budget (CF)" caption="&AccountsPayableBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	Sum({[Account.Accounts by CFType].[Accounts Payable]}, [Measures].[Amount, Budget])
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Investing Activities (CF)" caption="&InvestingActivitiesAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Changes in Property Plant and Equipment (CF)] + 
+		[Measures].[Amount, Changes in Other Assets (CF)] 
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Investing Activities Budget (CF)" caption="&InvestingActivitiesBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Changes in Property Plant and Equipment Budget (CF)] + 
+		[Measures].[Amount, Changes in Other Assets Budget (CF)] 
+	</Formula>
+  	</CalculatedMember>
+
+
+  	<CalculatedMember name="Amount, Financing Activities (CF)" caption="&FinancingAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Changes in Long Term Debt (CF)] + 
+		[Measures].[Amount, Changes in Common Stock and Equity (CF)] 
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Financing Activities Budget (CF)" caption="&FinancingBudgetAmount;" dimension="Measures" visible="true">
+	<Formula> 
+        	[Measures].[Amount, Changes in Long Term Debt Budget (CF)] + 
+		[Measures].[Amount, Changes in Common Stock and Equity Budget (CF)] 
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Net Cash Flow (CF)" caption="&NCFAmount;" dimension="Measures" visible="true">
+	<Formula>
+        	[Measures].[Amount, Net Income (IS)] +  
+        	[Measures].[Amount, Operating Activities (CF)] + 
+		[Measures].[Amount, Investing Activities (CF)] + 
+		[Measures].[Amount, Financing Activities (CF)] 
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Amount, Net Cash Flow Budget (CF)" caption="&NCFBudgetAmount;" dimension="Measures" visible="true">
+	<Formula>
+        	[Measures].[Amount, Net Income Budget (IS)] +  
+        	[Measures].[Amount, Operating Activities Budget (CF)] + 
+		[Measures].[Amount, Investing Activities Budget (CF)] + 
+		[Measures].[Amount, Financing Activities Budget (CF)] 
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Days in Period" dimension="Measures" visible="false">
+	<Formula> 
+        <![CDATA[
+                iif([Fiscal Period.Fiscal Period CL].CurrentMember.Level.Ordinal = 1, 360, 
+			iif([Fiscal Period.Fiscal Period CL].CurrentMember.Level.Ordinal = 2, 30, cast(null as numeric)))
+	]]>
+	</Formula>
+  	</CalculatedMember>
+
+
+  	<CalculatedMember name="Days, In Inventory" caption="&DaysInInventory;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		iif([Measures].[Days in Period] is empty, cast(null as numeric),
+			iif( (NOT([Measures].[Amount, Inventory (CF)] is empty)) AND ([Measures].[Amount, Changes in Cost of Goods Sold (IS)] is empty OR [Measures].[Amount, Changes in Cost of Goods Sold (IS)] = 0) , [Measures].[Days in Period],
+				iif( ([Measures].[Amount, Inventory (CF)] is empty OR [Measures].[Amount, Inventory (CF)] = 0) AND (NOT([Measures].[Amount, Changes in Cost of Goods Sold (IS)] is empty)), 0,
+					[Measures].[Amount, Inventory (CF)] / ([Measures].[Amount, Changes in Cost of Goods Sold (IS)] / [Measures].[Days in Period] ) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Days, In Inventory Budget" caption="&DaysInInventoryBudget;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		iif([Measures].[Days in Period] is empty, cast(null as numeric),
+			iif( (NOT([Measures].[Amount, Inventory Budget (CF)] is empty)) AND ([Measures].[Amount, Changes in Cost of Goods Sold Budget (IS)] is empty OR [Measures].[Amount, Changes in Cost of Goods Sold Budget (IS)] = 0) , [Measures].[Days in Period],
+				iif( ([Measures].[Amount, Inventory Budget (CF)] is empty OR [Measures].[Amount, Inventory Budget (CF)] = 0) AND (NOT([Measures].[Amount, Changes in Cost of Goods Sold Budget (IS)] is empty)), 0,
+					[Measures].[Amount, Inventory Budget (CF)] / ([Measures].[Amount, Changes in Cost of Goods Sold Budget (IS)] / [Measures].[Days in Period] ) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Days, Sales Outstanding" caption="&DaysSalesOutstanding;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		iif([Measures].[Days in Period] is empty, cast(null as numeric),
+			iif( (NOT([Measures].[Amount, Net Receivables (CF)] is empty)) AND ([Measures].[Amount, Changes in Revenue (IS)] is empty OR [Measures].[Amount, Changes in Revenue (IS)] = 0) , [Measures].[Days in Period],
+				iif( ([Measures].[Amount, Net Receivables (CF)] is empty OR [Measures].[Amount, Net Receivables (CF)] = 0) AND (NOT([Measures].[Amount, Changes in Revenue (IS)] is empty)), 0,
+					[Measures].[Amount, Net Receivables (CF)] / ([Measures].[Amount, Changes in Revenue (IS)] / [Measures].[Days in Period] ) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+  	<CalculatedMember name="Days, Sales Outstanding Budget" caption="&DaysSalesOutstandingBudget;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		iif([Measures].[Days in Period] is empty, cast(null as numeric),
+			iif( (NOT([Measures].[Amount, Net Receivables Budget (CF)] is empty)) AND ([Measures].[Amount, Changes in Revenue Budget (IS)] is empty OR [Measures].[Amount, Changes in Revenue Budget (IS)] = 0) , [Measures].[Days in Period],
+				iif( ([Measures].[Amount, Net Receivables Budget (CF)] is empty OR [Measures].[Amount, Net Receivables Budget (CF)] = 0) AND (NOT([Measures].[Amount, Changes in Revenue Budget (IS)] is empty)), 0,
+					[Measures].[Amount, Net Receivables Budget (CF)] / ([Measures].[Amount, Changes in Revenue Budget (IS)] / [Measures].[Days in Period] ) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+ 	<CalculatedMember name="Days, Payable Outstanding" caption="&DaysPayableOutstanding;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		iif([Measures].[Days in Period] is empty, cast(null as numeric),
+			iif( (NOT([Measures].[Amount, Accounts Payable (CF)] is empty)) AND ([Measures].[Amount, Changes in Cost of Goods Sold (IS)] is empty OR [Measures].[Amount, Changes in Cost of Goods Sold (IS)] = 0) , [Measures].[Days in Period],
+				iif( ([Measures].[Amount, Accounts Payable (CF)] is empty OR [Measures].[Amount, Accounts Payable (CF)] = 0) AND (NOT([Measures].[Amount, Changes in Cost of Goods Sold (IS)] is empty)), 0,
+					[Measures].[Amount, Accounts Payable (CF)] / ([Measures].[Amount, Changes in Cost of Goods Sold (IS)] / [Measures].[Days in Period] ) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+ 	<CalculatedMember name="Days, Payable Outstanding Budget" caption="&DaysPayableOutstandingBudget;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		iif([Measures].[Days in Period] is empty, cast(null as numeric),
+			iif( (NOT([Measures].[Amount, Accounts Payable Budget (CF)] is empty)) AND ([Measures].[Amount, Changes in Cost of Goods Sold Budget (IS)] is empty OR [Measures].[Amount, Changes in Cost of Goods Sold Budget (IS)] = 0) , [Measures].[Days in Period],
+				iif( ([Measures].[Amount, Accounts Payable Budget (CF)] is empty OR [Measures].[Amount, Accounts Payable Budget (CF)] = 0) AND (NOT([Measures].[Amount, Changes in Cost of Goods Sold Budget (IS)] is empty)), 0,
+					[Measures].[Amount, Accounts Payable Budget (CF)] / ([Measures].[Amount, Changes in Cost of Goods Sold Budget (IS)] / [Measures].[Days in Period] ) ) ) )]]>
+	</Formula>
+  	</CalculatedMember>
+
+ 	<CalculatedMember name="Days, Cash Conversion Cycle" caption="&DaysCCC;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		[Measures].[Days, In Inventory]
+		+ [Measures].[Days, Sales Outstanding]
+		- [Measures].[Days, Payable Outstanding]
+	]]>
+	</Formula>
+  	</CalculatedMember>
+
+ 	<CalculatedMember name="Days, Cash Conversion Cycle Budget" caption="&DaysCCCBudget;" dimension="Measures" visible="true">
+	<Formula> 
+        <![CDATA[
+		[Measures].[Days, In Inventory Budget]
+		+ [Measures].[Days, Sales Outstanding Budget]
+		- [Measures].[Days, Payable Outstanding Budget]
+	]]>
+	</Formula>
+  	</CalculatedMember>
+
+</Cube>
+

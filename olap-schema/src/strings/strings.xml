@@ -1,0 +1,61 @@
+<!-- 
+	Copyright 2012 Jeff Gunderson
+	Licensed under the GNU Public License, Version 3.0
+-->
+<!ENTITY Order "Order">
+<!ENTITY OrderByKey "Orders by Number">
+<!ENTITY OrderKey "Order Number">
+<!ENTITY OrderKeyAll "All Orders by Number">
+<!ENTITY OrderCount "Count, Orders">
+<!ENTITY OrderAmount "Amount, Order">
+<!ENTITY OrderAmountList "Amount, Order List">
+<!ENTITY OrderAmountQuantity "Amount, Order Quantity">
+<!ENTITY OrderDiscount "Amount, Order Discount">
+<!ENTITY OrderAverage "Average, Order">
+<!ENTITY OrderDate "Date, Order">
+<!ENTITY OrderPromise "Date, Promise">
+<!ENTITY OrderType "Order Type">
+<!ENTITY OrderByType "Orders By Type">
+<!ENTITY OrderTypeAll "All Orders By Type">
+
+<!ENTITY DateOrder "Order Date">
+
+<!ENTITY CROpportunityAndOrder "Opportunities and Orders">
+
+<!ENTITY SOOrder "Sales Orders">
+<!ENTITY SODelivery "Sales Deliveries">
+<!ENTITY SOPeriod "Open Sales Orders By Period">
+
+<!ENTITY SalesDaysO2D "Days, Order to Delivery">
+<!ENTITY SalesImpactO2D "Interest, O2D Impact">
+<!ENTITY SalesUnfulfilledOrder "Balance, Orders Unfulfilled">
+<!ENTITY SalesProfit "Amount, Profit">
+
+<!ENTITY OrderLine "Order Line">
+<!ENTITY OrderLineByOrder "OrderLine by Order">
+<!ENTITY OrderLineKey "OrderLine Number">
+<!ENTITY OrderLineAll "All Order Lines by Order">
+
+<!ENTITY Delivery "Delivery">
+<!ENTITY DeliveryByKey "Deliveries by Number">
+<!ENTITY DeliveryKey "Delivery Number">
+<!ENTITY DeliveryKeyAll "All Deliveries by Number">
+<!ENTITY DeliveryCount "Count, Deliveries">
+<!ENTITY DeliveryAmount "Amount, Delivery">
+<!ENTITY DeliveryAmountList "Amount, Delivery List">
+<!ENTITY DeliveryDiscount "Amount, Delivery Discount">
+<!ENTITY DeliveryCostAmount "Amount, Cost">
+
+<!ENTITY DeliveryLine "Delivery Line">
+<!ENTITY DeliveryLineByDelivery "Delivery Line by Delivery">
+<!ENTITY DeliveryLineKey "Delivery Line Number">
+<!ENTITY DeliveryLineAll "All Delivery Lines by Delivery">
+<!ENTITY DeliveryDate "Date, Delivery">
+<!ENTITY DeliveryPromise "Date, Promise">
+<!ENTITY DeliveryProfit "Amount, Profit">
+<!ENTITY DeliveryMargin "Percentage, Margin">
+<!ENTITY DeliveryAverage "Average, Delivery">
+<!ENTITY DeliveryCostAverage "Average, Cost">
+<!ENTITY DeliveryProfitAverage "Average, Profit">
+
+<!ENTITY DateDelivery "Delivery Date">

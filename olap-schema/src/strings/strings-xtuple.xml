@@ -1,0 +1,62 @@
+<!-- 
+	Copyright 2012 Jeff Gunderson
+	Licensed under the GNU Public License, Version 3.0
+-->
+<!ENTITY Order "Booking">
+<!ENTITY OrderByKey "Booking">
+<!ENTITY OrderKey "Booking Number">
+<!ENTITY OrderKeyAll "All Bookings">
+<!ENTITY OrderCount "Count, Bookings">
+<!ENTITY OrderAmount "Amount, Booking">
+<!ENTITY OrderAmountList "Amount, Customer Price">
+<!ENTITY OrderAmountQuantity "Amount, Booking Quantity">
+<!ENTITY OrderDiscount "Amount, Booking Discount">
+<!ENTITY OrderAverage "Average, Booking">
+<!ENTITY OrderDate "Date, Booking">
+<!ENTITY OrderPromise "Date, Promise">
+<!ENTITY OrderType "Booking Type">
+<!ENTITY OrderByType "Booking By Type">
+<!ENTITY OrderTypeAll "All Bookings By Type">
+
+<!ENTITY DateDelivery "Shipment Date">
+<!ENTITY DateOrder "Booking Date">
+
+<!ENTITY CROpportunityAndOrder "Opportunities and Bookings">
+
+<!ENTITY DaysNowToExpiration "Days, Now to Expiration">
+
+<!ENTITY SOOrder "Bookings">
+<!ENTITY SODelivery "Shipments">
+<!ENTITY SOPeriod "Shipment Backlog">
+
+<!ENTITY SalesDaysO2D "Days, Booking to Shipment">
+<!ENTITY SalesImpactO2D "Interest, B2S Impact">
+<!ENTITY SalesUnfulfilledOrder "Balance, Backlog">
+<!ENTITY SalesProfit "Amount, Profit">
+
+<!ENTITY OrderLine "Booking Line">
+<!ENTITY OrderLineByOrder "BookingLine by Booking">
+<!ENTITY OrderLineKey "BookingLine Number">
+<!ENTITY OrderLineAll "All Booking Lines by Booking">
+
+<!ENTITY Delivery "Shipment">
+<!ENTITY DeliveryByKey "Shipment by Number">
+<!ENTITY DeliveryKey "Shipment Number">
+<!ENTITY DeliveryKeyAll "All Shipments by Number">
+<!ENTITY DeliveryCount "Count, Shipments">
+<!ENTITY DeliveryAmount "Amount, Shipment">
+<!ENTITY DeliveryAmountList "Amount, Customer Price">
+<!ENTITY DeliveryDiscount "Amount, Shipment Discount">
+<!ENTITY DeliveryCostAmount "Amount, Cost">
+
+<!ENTITY DeliveryLine "Shipment Line">
+<!ENTITY DeliveryLineByDelivery "Shipment Line by Shipment">
+<!ENTITY DeliveryLineKey "Shipment Line Number">
+<!ENTITY DeliveryLineAll "All Shipment Lines by Shipment">
+<!ENTITY DeliveryDate "Date, Shipment">
+<!ENTITY DeliveryPromise "Date, Promise">
+<!ENTITY DeliveryProfit "Amount, Profit">
+<!ENTITY DeliveryMargin "Percentage, Margin">
+<!ENTITY DeliveryAverage "Average, Shipment">
+<!ENTITY DeliveryCostAverage "Average, Cost">
+<!ENTITY DeliveryProfitAverage "Average, Profit">

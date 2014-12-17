@@ -1,0 +1,5 @@
+	<View alias="GL_BUDGET"> 
+		<SQL dialect="generic"> 
+			<![CDATA[select * from "ERPI"."GL_BUDGET" WHERE "TENANT" = '[organization]']]> 
+		</SQL> 
+	</View>
